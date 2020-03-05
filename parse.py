@@ -43,10 +43,10 @@ def scrape_song_lyrics(url):
         page = requests.get(url)
         html = BeautifulSoup(page.text, 'html.parser')
         lyrics = html.find('div', class_='lyrics').get_text()
-		#remove identifiers like [chorus], [verse], etc
+        #remove identifiers like [chorus], [verse], etc
         lyrics = re.sub(r'[\(\[].*?[\)\]]', '', lyrics)
         #remove empty lines
-		lyrics = os.linesep.join([s for s in lyrics.splitlines() if s])
+        lyrics = os.linesep.join([s for s in lyrics.splitlines() if s])
     except:
         lyrics = None
     return lyrics
@@ -55,34 +55,34 @@ def scrape_song_lyrics(url):
 def arg_parse():
     parser = argparse.ArgumentParser(description='Parser')
     parser.add_argument("--artists", dest = 'artists_file',
-						help = "Text file containing artists' names",
+                        help = "Text file containing artists' names",
                         default = "bands.txt", type = str)
     parser.add_argument("--save_dir", dest = 'save_dir',
-						help = "Directory for saving parsed files",
+                        help = "Directory for saving parsed files",
                         default = "lyrics", type = str)
     return parser.parse_args()
 
 
 if __name__ == "__main__":
-	args = arg_parse()
-	
-	artists_list = []
-	with open(args.artists_file, 'r') as f:
-		artists_list = f.read().splitlines()
+    args = arg_parse()
+    
+    artists_list = []
+    with open(args.artists_file, 'r') as f:
+        artists_list = f.read().splitlines()
 
-	for artist_name in artists_list:
-		artist_id = get_artist_id(artist_name)
-		if not artist_id:
-			print("{} not found".format(artist_name))
-			continue
+    for artist_name in artists_list:
+        artist_id = get_artist_id(artist_name)
+        if not artist_id:
+            print("{} not found".format(artist_name))
+            continue
 
-		print("Collecting {} songs".format(artist_name))
-		os.mkdir("{}/{}".format(args.save_dir, artist_name))
+        print("Collecting {} songs".format(artist_name))
+        os.mkdir("{}/{}".format(args.save_dir, artist_name))
 
-		songs = get_songs(artist_id)
-		for (song_name, song_url) in songs:
-			song_name = re.sub(r'/', '_', song_name)	#remove '/' from song name
-			text = scrape_song_lyrics(song_url)
-			if text:
-				with open("{}/{}/{}.txt".format(args.save_dir, artist_name, song_name), 'w') as f:
-					f.write(text)
+        songs = get_songs(artist_id)
+        for (song_name, song_url) in songs:
+            song_name = re.sub(r'/', '_', song_name)	#remove '/' from song name
+            text = scrape_song_lyrics(song_url)
+            if text:
+                with open("{}/{}/{}.txt".format(args.save_dir, artist_name, song_name), 'w') as f:
+                    f.write(text)
