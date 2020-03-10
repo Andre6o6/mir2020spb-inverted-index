@@ -10,7 +10,7 @@ def tfidf(posting):
             for k,v in sorted(posting.items())]
 
 
-def query_boolean(index, query):
+def query_boolean(index, query, stemmer):
     op = ""
     prev_posting = []
     for token in query.split():
@@ -104,5 +104,5 @@ if __name__ == "__main__":
             word_count.append(sum(len(line.split()) for line in f))
 
     with shelve.open(args.index) as index:
-        hits = query_boolean(index, args.query)
+        hits = query_boolean(index, args.query, stemmer)
         render(args.query, hits, args.count)
