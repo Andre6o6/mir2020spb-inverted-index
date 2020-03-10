@@ -1,10 +1,9 @@
 import os
 import sys
 import string
+import argparse
 import shelve
-from collections import defaultdict, deque
 from gensim.parsing.porter import PorterStemmer
-
 
 def token_stream(files):
     for fileno, filepath in enumerate(files):
@@ -61,7 +60,6 @@ def merge_all_blocks(outputed_blocks, blocks_dir='blocks/'):
 
     for f in files:
         f.close()
-
     return output
 
 
