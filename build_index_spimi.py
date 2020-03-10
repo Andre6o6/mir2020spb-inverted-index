@@ -1,16 +1,68 @@
 import os
-from gensim.parsing.porter import PorterStemmer
+import sys
 import string
-import pickle
+import shelve
 from collections import defaultdict, deque
+from gensim.parsing.porter import PorterStemmer
+
+
+def token_stream(files):
+    for fileno, filepath in enumerate(files):
+        with open(filepath, 'r') as f:
+            for line in f:
+                line = line.translate(str.maketrans('', '', string.punctuation)).rstrip()
+                for token in line.split():
+                    yield fileno, token
+
 
 def merge_dicts(dict1, dict2):
+    if dict1 == {}:
+        return dict2
+    #Merge
     for k,v in dict2.items():
-        if k not in dict1.keys():
-            dict1[k] = v
+        if k in dict1.keys():
+            dict1[k] += v
         else:
-            dict1[k] = {**dict1[k], **dict2[k]}
-    return dict1
+            dict1[k] = v
+    #Sort
+    return {k: dict1[k] for k in sorted(dict1)}
+
+
+def merge_all_blocks(outputed_blocks, blocks_dir='blocks/'):
+    files = [shelve.open(blocks_dir+b) for b in outputed_blocks]
+    iterators = [iter(sorted(f.keys())) for f in files]
+    buffer = [None for i in iterators]
+    
+    output = shelve.open('index')
+    while iterators:
+        #Iterate in reverse order for removing
+        for i in range(len(iterators))[::-1]:
+            if buffer[i] is not None:
+                continue
+
+            try:
+                k = next(iterators[i])
+                buffer[i] = (k, files[i][k])
+            except:   #StopIteration
+                iterators.pop(i)
+                buffer.pop(i)
+                continue
+         
+        if not iterators:
+            break
+
+        min_term = min([b[0] for b in buffer])
+        dictionary = {}
+        for i, (termId, doc_dict) in enumerate(buffer):
+            if termId == min_term:
+                dictionary = merge_dicts(dictionary, doc_dict)
+                buffer[i] = None    #clear buffer
+        output[min_term] = dictionary
+
+    for f in files:
+        f.close()
+
+    return output
 
 
 def arg_parse():
@@ -21,66 +73,50 @@ def arg_parse():
     parser.add_argument("--memory", dest = 'memory_mb',
                         help = "Available memory in Mb",
                         default = 1, type = int)
+    parser.add_argument("--temp_dir", dest = 'blocks_dir',
+                        help = "Temporary directory for saving blocks",
+                        default = "blocks/", type = str)
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = arg_parse()
     docs = [dir+'/'+f for dir in os.listdir(args.root) for f in os.listdir(args.root+dir)]
+    files = [args.root+d for d in docs]
     stemmer = PorterStemmer()
     
     memory_available = args.memory_mb*1024*1024
     memory_used = 0
-    dictionary = defaultdict(dict)
+
+    outputed_blocks = []
     block_index = 0
-    for docId, d in enumerate(docs):
-        filepath = root+d
-        size = os.stat(filepath).st_size
+    dictionary = {}
 
-        if (memory_used + size > memory_available):
-            with open('blocks/block'+str(block_index)+'.p', 'wb') as output:
-                pickle.dump(dictionary, output, protocol=pickle.HIGHEST_PROTOCOL)
-            block_index +=1
+    for docId, token in token_stream(files):
+        memory_used += sys.getsizeof(token)
+        
+        term = stemmer.stem(token)
+        if term not in dictionary.keys():
+            dictionary[term] = {}
+        if docId not in dictionary[term].keys():
+            dictionary[term][docId] = 0
+        dictionary[term][docId] += 1
+
+        if memory_used > memory_available:
+            #Sort terms and write to disk
+            with shelve.open(args.blocks_dir+'block'+str(block_index)) as f:
+                for k in dictionary.keys():
+                    f[k] = dictionary[k]
+            outputed_blocks.append('block'+str(block_index))
+            block_index += 1
             memory_used = 0
-            dictionary.clear()
+            dictionary = {}
 
-        memory_used += size
-        with open(filepath, 'r') as f:
-            data = f.read().replace('\n', ' ')
-            data = data.translate(str.maketrans('', '', string.punctuation))
-            for token in data.split():
-                term = stemmer.stem(token)
-
-                if docId not in dictionary[term].keys():
-                    dictionary[term][docId] = 0
-
-                dictionary[term][docId] += 1
-
-    #save last block
     if dictionary:
-        with open('blocks/block'+str(block_index)+'.p', 'wb') as output:
-            pickle.dump(dictionary, output, protocol=pickle.HIGHEST_PROTOCOL)
-        dictionary.clear()
-
-    all_blocks = sorted([f for f in os.listdir('blocks/')])
-    q = deque(all_blocks)
-    i=0
-    while len(q)>1:
-        #Read first 2 blocks from queue
-        with open('blocks/'+q.popleft(), 'rb') as f1:
-            block1 = pickle.load(f1)
-        with open('blocks/'+q.popleft(), 'rb') as f2:
-            block2 = pickle.load(f2)
-
-        #Merge
-        new_block = merge_dicts(block1, block2)
-
-        #Save and push merged block into queue
-        block_name = 'merged'+str(i)+'.p'
-        with open('blocks/'+block_name, 'wb') as f:
-            pickle.dump(new_block, f, protocol=pickle.HIGHEST_PROTOCOL)
-        q.append(block_name)
-        i+=1
+        with shelve.open(args.blocks_dir+'block'+str(block_index)) as f:
+            for k in sorted(dictionary.keys()):
+                f[k] = dictionary[k]
+        outputed_blocks.append('block'+str(block_index))
     
-    with open('index.p', 'wb') as f:
-        pickle.dump(new_block, f, protocol=pickle.HIGHEST_PROTOCOL)
+    index = merge_all_blocks(outputed_blocks, args.blocks_dir)
+    index.close()
