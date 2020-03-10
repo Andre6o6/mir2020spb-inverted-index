@@ -67,11 +67,11 @@ def render_file(tokens, file, root='lyrics/', offset=20):
                 print("...")
 
 
-def render(query, posting, count=10):
+def render(query, posting, count=10, root='lyrics/'):
     tokens = [t for t in query.split() if t not in ['AND', 'OR', 'NOT']]
     for docId,v in posting[:count]:
         print("[{:.3f}]".format(v))
-        render_file(tokens, docs[docId])
+        render_file(tokens, docs[docId], root)
         print()
 
 

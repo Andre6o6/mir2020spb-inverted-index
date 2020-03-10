@@ -14,6 +14,39 @@ def token_stream(files):
                     yield fileno, token
 
 
+def spimi_invert(files, stemmer, blocks_dir, memory_available):
+    memory_used = 0
+    outputed_blocks = []
+    block_index = 0
+    dictionary = {}
+    for docId, token in token_stream(files):
+        memory_used += sys.getsizeof(token)
+        
+        term = stemmer.stem(token)
+        if term not in dictionary.keys():
+            dictionary[term] = {}
+        if docId not in dictionary[term].keys():
+            dictionary[term][docId] = 0
+        dictionary[term][docId] += 1
+
+        if memory_used > memory_available:
+            #Sort terms and write to disk
+            with shelve.open(blocks_dir+'block'+str(block_index)) as f:
+                for k in sorted(dictionary.keys()):
+                    f[k] = dictionary[k]
+            outputed_blocks.append('block'+str(block_index))
+            block_index += 1
+            memory_used = 0
+            dictionary = {}
+    
+    if dictionary:
+        with shelve.open(blocks_dir+'block'+str(block_index)) as f:
+            for k in sorted(dictionary.keys()):
+                f[k] = dictionary[k]
+        outputed_blocks.append('block'+str(block_index))
+    return outputed_blocks
+
+
 def merge_dicts(dict1, dict2):
     if dict1 == {}:
         return dict2
@@ -81,40 +114,9 @@ if __name__ == "__main__":
     args = arg_parse()
     docs = [dir+'/'+f for dir in os.listdir(args.root) for f in os.listdir(args.root+dir)]
     files = [args.root+d for d in docs]
+    os.mkdir(args.blocks_dir)
     stemmer = PorterStemmer()
-    
     memory_available = args.memory_mb*1024*1024
-    memory_used = 0
-
-    outputed_blocks = []
-    block_index = 0
-    dictionary = {}
-
-    for docId, token in token_stream(files):
-        memory_used += sys.getsizeof(token)
-        
-        term = stemmer.stem(token)
-        if term not in dictionary.keys():
-            dictionary[term] = {}
-        if docId not in dictionary[term].keys():
-            dictionary[term][docId] = 0
-        dictionary[term][docId] += 1
-
-        if memory_used > memory_available:
-            #Sort terms and write to disk
-            with shelve.open(args.blocks_dir+'block'+str(block_index)) as f:
-                for k in dictionary.keys():
-                    f[k] = dictionary[k]
-            outputed_blocks.append('block'+str(block_index))
-            block_index += 1
-            memory_used = 0
-            dictionary = {}
-
-    if dictionary:
-        with shelve.open(args.blocks_dir+'block'+str(block_index)) as f:
-            for k in sorted(dictionary.keys()):
-                f[k] = dictionary[k]
-        outputed_blocks.append('block'+str(block_index))
-    
+    outputed_blocks = spimi_invert(files, stemmer, args.blocks_dir, args.memory_available)
     index = merge_all_blocks(outputed_blocks, args.blocks_dir)
     index.close()
