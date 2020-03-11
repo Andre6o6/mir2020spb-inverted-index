@@ -19,53 +19,43 @@ class Indexer:
         self.get_word_count()
         self.index = shelve.open(index_path)
 
-
     def get_word_count(self):
         self.word_count = []
         for _, doc in enumerate(self.docs):
             with open(self.root+doc, 'r') as f:
                 self.word_count.append(sum(len(line.split()) for line in f))
 
-
     def tfidf(self, posting):
         return [(k, v/self.word_count[k] * log2(len(self.docs)/len(posting)))
                 for k,v in sorted(posting.items())]
 
-
-    def query_boolean(self, query):
-        op = ""
-        prev_posting = []
-        for token in query.split():
-            #Save and skip operations tokens
-            if token in ['AND', 'NOT', 'OR']:
-                op += token
-                continue
-
-            #Get posting list for new query term
-            term = self.stemmer.stem(token)
-            posting = self.tfidf(self.index[term])
-
-            #Merge posting list according to operation
-            if op == "":
-                prev_posting = posting
-            elif op == "NOT":
-                prev_posting = not_postings(posting, len(docs))
-            elif op == "AND":
-                prev_posting = and_postings(prev_posting, posting)
-            elif op == "OR":
-                prev_posting = or_postings(prev_posting, posting)
-            elif op == "ANDNOT":
-                prev_posting = not_and_postings(posting, prev_posting)
-            elif op == "ORNOT":
-                prev_posting = not_or_postings(posting, prev_posting)
-            else:
-                raise Exception("Invalid operation: " + op)
-            op = ""
-        return sorted(prev_posting, key=lambda item: item[1], reverse=True)
-
+    def query_boolean(self, tokens):
+        try:
+            split_idx = tokens.index('OR')
+            return or_postings(self.query_boolean(tokens[:split_idx]),
+                               self.query_boolean(tokens[split_idx+1:]))
+        except:
+            pass
+        try:
+            split_idx = tokens.index('AND')
+            return and_postings(self.query_boolean(tokens[:split_idx]),
+                                self.query_boolean(tokens[split_idx+1:]))
+        except:
+            pass
+        try:
+            split_idx = tokens.index('NOT')
+            return not_postings(self.query_boolean(tokens[split_idx+1:],
+                                len(self.docs)))
+        except:
+            pass
+        term = self.stemmer.stem(tokens[0])
+        posting = self.tfidf(self.index[term])
+        return posting
 
     def render_file(self, tokens, file, offset=20):
+        #Print band and song name
         print("\033[4m{}\033[0m:".format(pretty_doc(file)))
+        #Try to find term in song text
         with open(self.root+file) as f:
             text = "".join(f.readlines())
             lowered_text = text.lower()
@@ -80,19 +70,23 @@ class Indexer:
                                                         text[n:n+len(token)],
                                                         text[n+len(token):end]))
                 except:
-                    print("...")
+                    print("-")
 
-
-    def close(self):
-        self.index.close()
-
-
-    def render(self, query, posting, count=10):
-        tokens = [t for t in query.split() if t not in ['AND', 'OR', 'NOT']]
+    def render(self, tokens, posting, count):
+        tokens = [t for t in tokens if t not in ['AND', 'OR', 'NOT']]
         for docId,v in posting[:count]:
             print("[{:.3f}]".format(v))
             self.render_file(tokens, self.docs[docId])
             print()
+    
+    def query(self, query, count=10):
+        tokens = query.split()
+        hits = self.query_boolean(tokens)
+        hits = sorted(hits, key=lambda item: item[1], reverse=True)
+        self.render(tokens, hits, count)
+
+    def close(self):
+        self.index.close()
 
 
 def pretty_doc(filename):
@@ -123,6 +117,6 @@ if __name__ == "__main__":
     docs = [dir+'/'+f for dir in os.listdir(args.root) for f in os.listdir(args.root+dir)]
 
     index = Indexer(docs, args.index, args.root)
-
-    hits = index.query_boolean(args.query)
-    render(args.query, hits, count=args.count)
+    index.query(args.query)
+    
+    index.close()

@@ -27,7 +27,7 @@ def spimi_invert(files, stemmer, blocks_dir, memory_available):
             dictionary[term] = {}
         if docId not in dictionary[term].keys():
             dictionary[term][docId] = 0
-        dictionary[term][docId] += 1
+        dictionary[term][docId] += 1    #save term freq. in document
 
         if memory_used > memory_available:
             #Sort terms and write to disk
@@ -39,6 +39,7 @@ def spimi_invert(files, stemmer, blocks_dir, memory_available):
             memory_used = 0
             dictionary = {}
     
+    #Save last block
     if dictionary:
         with shelve.open(blocks_dir+'block'+str(block_index)) as f:
             for k in sorted(dictionary.keys()):
@@ -66,23 +67,27 @@ def merge_all_blocks(outputed_blocks, blocks_dir='blocks/'):
     buffer = [None for i in iterators]
     
     output = shelve.open('index')
-    while iterators:
+    while True:
         #Iterate in reverse order for removing
         for i in range(len(iterators))[::-1]:
+            #Skip if buffer for this block is not empty
             if buffer[i] is not None:
                 continue
 
+            #Read next (term, posting_list) from block
             try:
                 k = next(iterators[i])
-                buffer[i] = (k, files[i][k])
-            except:   #StopIteration
+                buffer[i] = (k, files[i][k])    #put into buffer
+            except StopIteration:   #If block is emptied, remove it from lists
                 iterators.pop(i)
                 buffer.pop(i)
                 continue
-         
+        
+        #Stop if no more blocks left to merge
         if not iterators:
             break
 
+        #Merge and save postings corresponding to minimal term
         min_term = min([b[0] for b in buffer])
         dictionary = {}
         for i, (termId, doc_dict) in enumerate(buffer):
