@@ -138,7 +138,10 @@ if __name__ == "__main__":
     stemmer = PorterStemmer()
     # Generate fitting in memory blocks using SPIMI-Invert
     memory_available = args.memory_mb * 1024 * 1024
-    os.mkdir(args.blocks_dir)
+    try:
+        os.mkdir(args.blocks_dir)
+    except FileExistsError:
+        pass
     outputed_blocks = spimi_invert(files, stemmer, args.blocks_dir, memory_available)
     index = merge_all_blocks(outputed_blocks, args.blocks_dir)
     index.close()
