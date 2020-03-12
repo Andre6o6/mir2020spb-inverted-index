@@ -81,7 +81,7 @@ def merge_all_blocks(outputed_blocks, blocks_dir="blocks/"):
             try:
                 k = next(iterators[i])
                 buffer[i] = (k, files[i][k])  # put into buffer
-            except StopIteration:  # If block is emptied, remove it from lists
+            except:  # If block is emptied, remove it from lists
                 iterators.pop(i)
                 buffer.pop(i)
                 continue
@@ -110,7 +110,11 @@ def arg_parse():
         "--root", dest="root", help="Root directory", default="lyrics/", type=str
     )
     parser.add_argument(
-        "--memory", dest="memory_mb", help="Available memory in Mb", default=1, type=int
+        "--memory",
+        dest="memory_mb",
+        help="Available memory in Mb",
+        default=10,
+        type=int,
     )
     parser.add_argument(
         "--temp_dir",
@@ -135,8 +139,6 @@ if __name__ == "__main__":
     # Generate fitting in memory blocks using SPIMI-Invert
     memory_available = args.memory_mb * 1024 * 1024
     os.mkdir(args.blocks_dir)
-    outputed_blocks = spimi_invert(
-        files, stemmer, args.blocks_dir, args.memory_available
-    )
+    outputed_blocks = spimi_invert(files, stemmer, args.blocks_dir, memory_available)
     index = merge_all_blocks(outputed_blocks, args.blocks_dir)
     index.close()
