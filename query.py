@@ -37,27 +37,30 @@ class Indexer:
             split_idx = tokens.index("OR")
             return or_postings(
                 self.query_boolean(tokens[:split_idx]),
-                self.query_boolean(tokens[split_idx + 1 :]),
+                self.query_boolean(tokens[split_idx + 1:]),
             )
-        except:
+        except ValueError:
             pass
         try:
             split_idx = tokens.index("AND")
             return and_postings(
                 self.query_boolean(tokens[:split_idx]),
-                self.query_boolean(tokens[split_idx + 1 :]),
+                self.query_boolean(tokens[split_idx + 1:]),
             )
-        except:
+        except ValueError:
             pass
         try:
             split_idx = tokens.index("NOT")
             return not_postings(
-                self.query_boolean(tokens[split_idx + 1 :], len(self.docs))
+                self.query_boolean(tokens[split_idx + 1:], len(self.docs))
             )
-        except:
+        except ValueError:
             pass
         term = self.stemmer.stem(tokens[0])
-        posting = self.tfidf(self.index[term])
+        try:
+            posting = self.tfidf(self.index[term])
+        except KeyError:
+            return []
         return posting
 
     def render_file(self, tokens, file, offset=20):
@@ -77,16 +80,20 @@ class Indexer:
                     print(
                         "{}\033[1m{}\033[0m{}".format(
                             text[start:n],
-                            text[n : n + len(token)],
-                            text[n + len(token) : end],
+                            text[n:n + len(token)],
+                            text[n + len(token):end],
                         )
                     )
-                except:
+                except ValueError:
                     print("-")
 
-    def render(self, tokens, posting, count):
+    def render(self, tokens, hits, count):
+        if not hits:
+            print("Nothing found")
+            return
+    
         tokens = [t for t in tokens if t not in ["AND", "OR", "NOT"]]
-        for docId, v in posting[:count]:
+        for docId, v in hits[:count]:
             print("[{:.3f}]".format(v))
             self.render_file(tokens, self.docs[docId])
             print()
@@ -96,6 +103,7 @@ class Indexer:
         hits = self.query_boolean(tokens)
         hits = sorted(hits, key=lambda item: item[1], reverse=True)
         self.render(tokens, hits, count)
+            
 
     def close(self):
         self.index.close()

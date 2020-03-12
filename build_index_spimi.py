@@ -81,7 +81,7 @@ def merge_all_blocks(outputed_blocks, blocks_dir="blocks/"):
             try:
                 k = next(iterators[i])
                 buffer[i] = (k, files[i][k])  # put into buffer
-            except:  # If block is emptied, remove it from lists
+            except (StopIteration, KeyError):  # If block is emptied, remove it from lists
                 iterators.pop(i)
                 buffer.pop(i)
                 continue

@@ -48,7 +48,7 @@ def scrape_song_lyrics(url):
         lyrics = re.sub(r"[\(\[].*?[\)\]]", "", lyrics)
         # remove empty lines
         lyrics = os.linesep.join([s for s in lyrics.splitlines() if s])
-    except:
+    except AttributeError:
         lyrics = None
     return lyrics
 
