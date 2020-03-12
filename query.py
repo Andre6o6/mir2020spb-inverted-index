@@ -91,7 +91,7 @@ class Indexer:
         if not hits:
             print("Nothing found")
             return
-    
+
         tokens = [t for t in tokens if t not in ["AND", "OR", "NOT"]]
         for docId, v in hits[:count]:
             print("[{:.3f}]".format(v))
@@ -103,7 +103,6 @@ class Indexer:
         hits = self.query_boolean(tokens)
         hits = sorted(hits, key=lambda item: item[1], reverse=True)
         self.render(tokens, hits, count)
-            
 
     def close(self):
         self.index.close()
