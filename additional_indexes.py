@@ -2,15 +2,18 @@ import shelve
 import argparse
 from collections import defaultdict
 from gensim.parsing.porter import PorterStemmer
+from typing import List, Tuple, Any
 
 
-def pretty_doc(filename):
+def pretty_doc(filename: str) -> str:
     band, name = filename.split("/")[-2:]
     name = name.split(".")[0]
     return "{} - {}".format(band, name)
 
 
-def build_name_index(docs, stemmer):
+def build_name_index(
+    docs: List[Tuple[int, str]], stemmer: PorterStemmer
+) -> None:
     index_names = defaultdict(dict)
     for docId, doc in enumerate(docs):
         for token in pretty_doc(doc).split():
@@ -20,7 +23,7 @@ def build_name_index(docs, stemmer):
         index.update(index_names)
 
 
-def arg_parse():
+def arg_parse() -> Any:
     parser = argparse.ArgumentParser(description="Additional indexes")
     parser.add_argument(
         "--root",

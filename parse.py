@@ -3,13 +3,14 @@ from bs4 import BeautifulSoup
 import os
 import re
 import argparse
+from typing import List, Any
 
 GENIUS_API_TOKEN = (
     "zDRVkBx0XfCETizJ7PSjDq7BmAWzNiIxGxeA9TIZXZbuWWLxVBY7GIqY9BJQY9jK"
 )
 
 
-def get_artist_id(artist_name):
+def get_artist_id(artist_name: str) -> int:
     base_url = "https://api.genius.com"
     headers = {"Authorization": "Bearer " + GENIUS_API_TOKEN}
     search_url = "{}/search?q={}".format(base_url, artist_name)
@@ -24,7 +25,7 @@ def get_artist_id(artist_name):
             return id
 
 
-def get_songs_page(artist_id, page):
+def get_songs_page(artist_id: int, page: int) -> requests.models.Response:
     url = "https://api.genius.com/artists/{}/songs?page={}".format(
         artist_id, page
     )
@@ -33,7 +34,7 @@ def get_songs_page(artist_id, page):
     return response
 
 
-def get_songs(artist_id):
+def get_songs(artist_id: int) -> List[str]:
     page = 1
     songs = []
     while page:
@@ -46,7 +47,7 @@ def get_songs(artist_id):
     return songs
 
 
-def scrape_song_lyrics(url):
+def scrape_song_lyrics(url: str) -> str:
     try:
         page = requests.get(url)
         html = BeautifulSoup(page.text, "html.parser")
@@ -60,7 +61,7 @@ def scrape_song_lyrics(url):
     return lyrics
 
 
-def arg_parse():
+def arg_parse() -> Any:
     parser = argparse.ArgumentParser(description="Parser")
     parser.add_argument(
         "--artists",

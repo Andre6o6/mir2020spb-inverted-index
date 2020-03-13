@@ -4,9 +4,10 @@ import string
 import argparse
 import shelve
 from gensim.parsing.porter import PorterStemmer
+from typing import List, Dict, Tuple, Iterator, Any
 
 
-def token_stream(files):
+def token_stream(files: List[str]) -> Iterator[Tuple[int, str]]:
     for fileno, filepath in enumerate(files):
         with open(filepath, "r") as f:
             for line in f:
@@ -17,7 +18,12 @@ def token_stream(files):
                     yield fileno, token
 
 
-def spimi_invert(files, stemmer, blocks_dir, memory_available):
+def spimi_invert(
+    files: List[str],
+    stemmer: PorterStemmer,
+    blocks_dir: str,
+    memory_available: int,
+) -> List[str]:
     memory_used = 0
     outputed_blocks = []
     block_index = 0
@@ -51,7 +57,9 @@ def spimi_invert(files, stemmer, blocks_dir, memory_available):
     return outputed_blocks
 
 
-def merge_dicts(dict1, dict2):
+def merge_dicts(
+    dict1: Dict[int, int], dict2: Dict[int, int]
+) -> Dict[int, int]:
     if dict1 == {}:
         return dict2
     # Merge
@@ -64,7 +72,9 @@ def merge_dicts(dict1, dict2):
     return {k: dict1[k] for k in sorted(dict1)}
 
 
-def merge_all_blocks(outputed_blocks, blocks_dir="blocks/"):
+def merge_all_blocks(
+    outputed_blocks: List[str], blocks_dir: str = "blocks/"
+) -> None:
     files = [shelve.open(blocks_dir + b) for b in outputed_blocks]
     iterators = [iter(sorted(f.keys())) for f in files]
     buffer = [None for i in iterators]
@@ -104,10 +114,10 @@ def merge_all_blocks(outputed_blocks, blocks_dir="blocks/"):
 
     for f in files:
         f.close()
-    return output
+    output.close()
 
 
-def arg_parse():
+def arg_parse() -> Any:
     parser = argparse.ArgumentParser(description="inverted index via SPIMI")
     parser.add_argument(
         "--root",
@@ -152,5 +162,4 @@ if __name__ == "__main__":
     outputed_blocks = spimi_invert(
         files, stemmer, args.blocks_dir, memory_available
     )
-    index = merge_all_blocks(outputed_blocks, args.blocks_dir)
-    index.close()
+    merge_all_blocks(outputed_blocks, args.blocks_dir)

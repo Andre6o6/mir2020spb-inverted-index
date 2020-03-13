@@ -1,38 +1,42 @@
 import os
 import argparse
 import shelve
+import re
 from math import log2
 from gensim.parsing.porter import PorterStemmer
 from merge_operations import *
+from typing import List, Dict, Tuple, Any
 
 
 class Indexer:
-    root = ""
-    docs = []
-    word_count = []
-    stemmer = None
-    index = None
+    root: str
+    docs: List[str]
+    word_count: List[int]
+    stemmer: PorterStemmer
+    index: shelve.DbfilenameShelf
 
-    def __init__(self, docs, index_path, root="lyrics/"):
+    def __init__(
+        self, docs: List[str], index_path: str, root: str = "lyrics/"
+    ) -> None:
         self.root = root
         self.docs = docs
         self.stemmer = PorterStemmer()
         self.get_word_count()
         self.index = shelve.open(index_path)
 
-    def get_word_count(self):
+    def get_word_count(self) -> None:
         self.word_count = []
         for _, doc in enumerate(self.docs):
             with open(self.root + doc, "r") as f:
                 self.word_count.append(sum(len(line.split()) for line in f))
 
-    def tfidf(self, posting):
+    def tfidf(self, posting: Dict[int, int]) -> List[Tuple[int, float]]:
         return [
             (k, v / self.word_count[k] * log2(len(self.docs) / len(posting)))
             for k, v in sorted(posting.items())
         ]
 
-    def query_boolean(self, tokens):
+    def query_boolean(self, tokens: List[str]) -> List[Tuple[int, float]]:
         try:
             split_idx = tokens.index("OR")
             return or_postings(
@@ -63,58 +67,63 @@ class Indexer:
             return []
         return posting
 
-    def render_file(self, tokens, file, offset=20):
+    def render_file(
+        self, tokens: List[str], filename: str, offset: int = 20
+    ) -> None:
         # Print band and song name
-        print("\033[4m{}\033[0m:".format(pretty_doc(file)))
+        print("\033[4m{}\033[0m:".format(pretty_doc(filename)))
         # Try to find term in song text
-        with open(self.root + file) as f:
+        with open(self.root + filename) as f:
             text = "".join(f.readlines())
             lowered_text = text.lower()
             for token in tokens:
                 try:
-                    n = lowered_text.index(self.stemmer.stem(token))
-                    if n > offset:
+                    term = self.stemmer.stem(token)
+                    w = re.search(r"\b{}\w*\b".format(term),lowered_text)
+                    l = re.search(r"\b{}.*?\n".format(term),lowered_text)
+                    if w.start() > offset:
                         print("...", end="")
-                    start = max(0, n - offset)
-                    end = lowered_text.index("\n", n)
+                    start = max(0, w.start() - offset)
                     print(
                         "{}\033[1m{}\033[0m{}".format(
-                            text[start:n],
-                            text[n:n + len(token)],
-                            text[n + len(token):end],
+                            text[start:w.start()],
+                            text[w.start():w.end()],
+                            text[w.end():l.end() - 1],
                         )
                     )
                 except ValueError:
                     print("-")
 
-    def render(self, tokens, hits, count):
+    def render(
+        self, tokens: List[str], hits: List[Tuple[int, float]], count: int
+    ) -> None:
         if not hits:
             print("Nothing found")
             return
-
         tokens = [t for t in tokens if t not in ["AND", "OR", "NOT"]]
+        print("{} hits found.\n".format(len(hits)))
         for docId, v in hits[:count]:
-            print("[{:.3f}]".format(v))
+            print("[relevance = {:.3f}]".format(v))
             self.render_file(tokens, self.docs[docId])
             print()
 
-    def query(self, query, count=10):
+    def query(self, query: str, count: int = 10) -> None:
         tokens = query.split()
         hits = self.query_boolean(tokens)
         hits = sorted(hits, key=lambda item: item[1], reverse=True)
         self.render(tokens, hits, count)
 
-    def close(self):
+    def close(self) -> None:
         self.index.close()
 
 
-def pretty_doc(filename):
+def pretty_doc(filename: str) -> str:
     band, name = filename.split("/")[-2:]
     name = name.split(".")[0]
     return "{} - {}".format(band, name)
 
 
-def arg_parse():
+def arg_parse() -> Any:
     parser = argparse.ArgumentParser(description="Querying inverted index")
     parser.add_argument(
         "--root",
