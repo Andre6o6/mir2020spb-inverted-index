@@ -78,17 +78,17 @@ class Indexer:
             lowered_text = text.lower()
             for token in tokens:
                 try:
-                    term = self.stemmer.stem(token)
-                    w = re.search(r"\b{}\w*\b".format(term),lowered_text)
-                    l = re.search(r"\b{}.*?\n".format(term),lowered_text)
-                    if w.start() > offset:
+                    w = self.stemmer.stem(token)
+                    w_match = re.search(r"\b{}\w*\b".format(w), lowered_text)
+                    l_match = re.search(r"\b{}.*?\n".format(w), lowered_text)
+                    if w_match.start() > offset:
                         print("...", end="")
-                    start = max(0, w.start() - offset)
+                    start = max(0, w_match.start() - offset)
                     print(
                         "{}\033[1m{}\033[0m{}".format(
-                            text[start:w.start()],
-                            text[w.start():w.end()],
-                            text[w.end():l.end() - 1],
+                            text[start:w_match.start()],
+                            text[w_match.start():w_match.end()],
+                            text[w_match.end():l_match.end() - 1],
                         )
                     )
                 except ValueError:
