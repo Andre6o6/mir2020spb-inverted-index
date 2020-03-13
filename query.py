@@ -1,10 +1,10 @@
-import os
 import argparse
-import shelve
+import os
 import re
-from math import log2
+import shelve
 from gensim.parsing.porter import PorterStemmer
-from merge_operations import *
+from math import log2
+from merge_operations import or_postings, and_postings, not_postings
 from typing import List, Dict, Tuple, Any
 
 
@@ -91,7 +91,7 @@ class Indexer:
                             text[w_match.end():l_match.end() - 1],
                         )
                     )
-                except ValueError:
+                except AttributeError:
                     print("-")
 
     def render(

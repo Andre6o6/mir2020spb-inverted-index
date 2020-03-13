@@ -1,8 +1,8 @@
-import os
-import sys
-import string
 import argparse
+import os
 import shelve
+import string
+import sys
 from gensim.parsing.porter import PorterStemmer
 from typing import List, Dict, Tuple, Iterator, Any
 

@@ -1,5 +1,5 @@
-import shelve
 import argparse
+import shelve
 from collections import defaultdict
 from gensim.parsing.porter import PorterStemmer
 from typing import List, Tuple, Any

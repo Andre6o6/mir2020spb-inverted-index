@@ -1,13 +1,11 @@
-import requests
-from bs4 import BeautifulSoup
+import argparse
 import os
 import re
-import argparse
+import requests
+from bs4 import BeautifulSoup
 from typing import List, Any
 
-GENIUS_API_TOKEN = (
-    "zDRVkBx0XfCETizJ7PSjDq7BmAWzNiIxGxeA9TIZXZbuWWLxVBY7GIqY9BJQY9jK"
-)
+GENIUS_API_TOKEN = os.environ['GENIUS_API_TOKEN']
 
 
 def get_artist_id(artist_name: str) -> int:
