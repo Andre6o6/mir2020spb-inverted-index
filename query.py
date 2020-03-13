@@ -52,7 +52,7 @@ class Indexer:
         try:
             split_idx = tokens.index("NOT")
             return not_postings(
-                self.query_boolean(tokens[split_idx + 1:], len(self.docs))
+                self.query_boolean(tokens[split_idx + 1:]), len(self.docs)
             )
         except ValueError:
             pass
