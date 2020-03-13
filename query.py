@@ -117,14 +117,24 @@ def pretty_doc(filename):
 def arg_parse():
     parser = argparse.ArgumentParser(description="Querying inverted index")
     parser.add_argument(
-        "--root", dest="root", help="Lyrics root directory", default="lyrics/", type=str
+        "--root",
+        dest="root",
+        help="Lyrics root directory",
+        default="lyrics/",
+        type=str,
     )
     parser.add_argument(
         "--index", dest="index", help="Index", default="index", type=str
     )
-    parser.add_argument("--q", dest="query", help="Query", default="", type=str)
     parser.add_argument(
-        "--count", dest="count", help="How many hits to show", default=10, type=int
+        "--q", dest="query", help="Query", default="", type=str
+    )
+    parser.add_argument(
+        "--count",
+        dest="count",
+        help="How many hits to show",
+        default=10,
+        type=int,
     )
     return parser.parse_args()
 

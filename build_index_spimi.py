@@ -81,7 +81,10 @@ def merge_all_blocks(outputed_blocks, blocks_dir="blocks/"):
             try:
                 k = next(iterators[i])
                 buffer[i] = (k, files[i][k])  # put into buffer
-            except (StopIteration, KeyError):  # If block is emptied, remove it from lists
+            except (
+                StopIteration,
+                KeyError,
+            ):  # remove emptied block from lists
                 iterators.pop(i)
                 buffer.pop(i)
                 continue
@@ -107,7 +110,11 @@ def merge_all_blocks(outputed_blocks, blocks_dir="blocks/"):
 def arg_parse():
     parser = argparse.ArgumentParser(description="inverted index via SPIMI")
     parser.add_argument(
-        "--root", dest="root", help="Root directory", default="lyrics/", type=str
+        "--root",
+        dest="root",
+        help="Root directory",
+        default="lyrics/",
+        type=str,
     )
     parser.add_argument(
         "--memory",
@@ -142,6 +149,8 @@ if __name__ == "__main__":
         os.mkdir(args.blocks_dir)
     except FileExistsError:
         pass
-    outputed_blocks = spimi_invert(files, stemmer, args.blocks_dir, memory_available)
+    outputed_blocks = spimi_invert(
+        files, stemmer, args.blocks_dir, memory_available
+    )
     index = merge_all_blocks(outputed_blocks, args.blocks_dir)
     index.close()

@@ -23,7 +23,11 @@ def build_name_index(docs, stemmer):
 def arg_parse():
     parser = argparse.ArgumentParser(description="Additional indexes")
     parser.add_argument(
-        "--root", dest="root", help="Lyrics root directory", default="lyrics/", type=str
+        "--root",
+        dest="root",
+        help="Lyrics root directory",
+        default="lyrics/",
+        type=str,
     )
     return parser.parse_args()
 
