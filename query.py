@@ -1,3 +1,5 @@
+"""This module implements index querying.
+"""
 import argparse
 import os
 import re
@@ -9,6 +11,7 @@ from typing import List, Dict, Tuple, Any
 
 
 class Indexer:
+    """Class that implements querying and printing results."""
     root: str
     docs: List[str]
     word_count: List[int]
@@ -18,6 +21,7 @@ class Indexer:
     def __init__(
         self, docs: List[str], index_path: str, root: str = "lyrics/"
     ) -> None:
+    """Initialize Indexer by assigning attributes and opening index file."""
         self.root = root
         self.docs = docs
         self.stemmer = PorterStemmer()
@@ -25,18 +29,21 @@ class Indexer:
         self.index = shelve.open(index_path)
 
     def get_word_count(self) -> None:
+    """Get length of each document."""
         self.word_count = []
         for _, doc in enumerate(self.docs):
             with open(self.root + doc, "r") as f:
                 self.word_count.append(sum(len(line.split()) for line in f))
 
     def tfidf(self, posting: Dict[int, int]) -> List[Tuple[int, float]]:
+    """Calculate tf-idf for documents in posting list."""
         return [
             (k, v / self.word_count[k] * log2(len(self.docs) / len(posting)))
             for k, v in sorted(posting.items())
         ]
 
     def query_boolean(self, tokens: List[str]) -> List[Tuple[int, float]]:
+    """Parse boolean quary in DNF."""
         try:
             split_idx = tokens.index("OR")
             return or_postings(
@@ -70,6 +77,7 @@ class Indexer:
     def render_file(
         self, tokens: List[str], filename: str, offset: int = 20
     ) -> None:
+    """Print song name and text snippet."""
         # Print band and song name
         print("\033[4m{}\033[0m:".format(pretty_doc(filename)))
         # Try to find term in song text
@@ -97,6 +105,7 @@ class Indexer:
     def render(
         self, tokens: List[str], hits: List[Tuple[int, float]], count: int
     ) -> None:
+    """Print the results of query."""
         if not hits:
             print("Nothing found")
             return
@@ -108,22 +117,26 @@ class Indexer:
             print()
 
     def query(self, query: str, count: int = 10) -> None:
+    """Query index and print results, sorted by tf-idf."""
         tokens = query.split()
         hits = self.query_boolean(tokens)
         hits = sorted(hits, key=lambda item: item[1], reverse=True)
         self.render(tokens, hits, count)
 
     def close(self) -> None:
+    """Close index file."""
         self.index.close()
 
 
 def pretty_doc(filename: str) -> str:
+    """Convert filename to pretty string 'band - song'."""
     band, name = filename.split("/")[-2:]
     name = name.split(".")[0]
     return "{} - {}".format(band, name)
 
 
 def arg_parse() -> Any:
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Querying inverted index")
     parser.add_argument(
         "--root",

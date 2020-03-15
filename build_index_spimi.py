@@ -1,3 +1,5 @@
+"""This module implements Single-pass in-memory Indexing.
+"""
 import argparse
 import os
 import shelve
@@ -8,6 +10,7 @@ from typing import List, Dict, Tuple, Iterator, Any
 
 
 def token_stream(files: List[str]) -> Iterator[Tuple[int, str]]:
+    """Convert list of filenames to a stream of docID-tokens pairs."""
     for fileno, filepath in enumerate(files):
         with open(filepath, "r") as f:
             for line in f:
@@ -24,6 +27,12 @@ def spimi_invert(
     blocks_dir: str,
     memory_available: int,
 ) -> List[str]:
+    """SPIMI-Invert procedure.
+
+    Collect terms, docIDs, term-frequencies into a block (dictionary
+    of dictionaries) that fits in available memory, write each block's
+    dictionary to disk, and start a new dictionary for the next block.
+    """
     memory_used = 0
     outputed_blocks = []
     block_index = 0
@@ -60,6 +69,7 @@ def spimi_invert(
 def merge_dicts(
     dict1: Dict[int, int], dict2: Dict[int, int]
 ) -> Dict[int, int]:
+    """Merge ans sort two dictionaries."""
     if dict1 == {}:
         return dict2
     # Merge
@@ -75,6 +85,13 @@ def merge_dicts(
 def merge_all_blocks(
     outputed_blocks: List[str], blocks_dir: str = "blocks/"
 ) -> None:
+    """Merge the resulting blocks of SPIMI-Invert.
+
+    Open all blocks simultaneously, then read a term from each block,
+    choose minimal term and write merged posting lists corresponding
+    to this term to disk. Then read next term only from blocks where
+    minimal term was. Repeat until all blocks are emptied.
+    """
     files = [shelve.open(blocks_dir + b) for b in outputed_blocks]
     iterators = [iter(sorted(f.keys())) for f in files]
     buffer = [None for i in iterators]
@@ -118,6 +135,7 @@ def merge_all_blocks(
 
 
 def arg_parse() -> Any:
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="inverted index via SPIMI")
     parser.add_argument(
         "--root",
