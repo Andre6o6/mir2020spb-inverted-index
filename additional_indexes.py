@@ -8,7 +8,15 @@ from typing import List, Any
 
 
 def pretty_doc(filename: str) -> str:
-    """Convert filename to pretty string 'band - song'."""
+    """Convert filename to pretty string 'band - song'.
+
+    Args:
+        filename: Path to a file.
+
+    Returns:
+        Pretty formatted song name.
+
+    """
     band, name = filename.split("/")[-2:]
     name = name.split(".")[0]
     return "{} - {}".format(band, name)
@@ -17,7 +25,13 @@ def pretty_doc(filename: str) -> str:
 def build_name_index(
     docs: List[str], stemmer: PorterStemmer
 ) -> None:
-    """Build index from list of song names."""
+    """Build index from list of song names.
+
+    Args:
+        docs: List of filenames.
+        stemmer: Gensim porter stemmer.
+
+    """
     index_names = defaultdict(dict)
     for docId, doc in enumerate(docs):
         for token in pretty_doc(doc).split():

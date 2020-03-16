@@ -5,13 +5,21 @@ import os
 import re
 import requests
 from bs4 import BeautifulSoup
-from typing import List, Any
+from typing import List, Tuple, Any
 
 GENIUS_API_TOKEN = os.environ['GENIUS_API_TOKEN']
 
 
 def get_artist_id(artist_name: str) -> int:
-    """Get artist id corresponding to given name."""
+    """Get artist id corresponding to given name.
+
+    Args:
+        artist_name: Artist or band name.
+
+    Returns:
+        Artist ID.
+
+    """
     base_url = "https://api.genius.com"
     headers = {"Authorization": "Bearer " + GENIUS_API_TOKEN}
     search_url = "{}/search?q={}".format(base_url, artist_name)
@@ -27,7 +35,16 @@ def get_artist_id(artist_name: str) -> int:
 
 
 def get_songs_page(artist_id: int, page: int) -> requests.models.Response:
-    """Request a page (with 20 songs per page) of artist with certain id."""
+    """Request a page (with 20 songs per page) of artist with certain id.
+
+    Args:
+        artist_id: Artist ID.
+        page: Page number to request.
+
+    Returns:
+        Requst response.
+
+    """
     url = "https://api.genius.com/artists/{}/songs?page={}".format(
         artist_id, page
     )
@@ -36,8 +53,16 @@ def get_songs_page(artist_id: int, page: int) -> requests.models.Response:
     return response
 
 
-def get_songs(artist_id: int) -> List[str]:
-    """Get a list of all songs' urls of artist with certain id."""
+def get_songs(artist_id: int) -> List[Tuple[str, str]]:
+    """Get a list of all songs' urls of artist with certain id.
+
+    Args:
+        artist_id: Artist ID.
+
+    Returns:
+        List of (song title, song url) for all artist' songs.
+
+    """
     page = 1
     songs = []
     while page:
@@ -51,7 +76,15 @@ def get_songs(artist_id: int) -> List[str]:
 
 
 def scrape_song_lyrics(url: str) -> str:
-    """Get song text from url."""
+    """Scrape song text from song web page.
+
+    Args:
+        url: Song url.
+
+    Returns:
+        Song text.
+
+    """
     try:
         page = requests.get(url)
         html = BeautifulSoup(page.text, "html.parser")

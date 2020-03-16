@@ -10,7 +10,15 @@ from typing import List, Dict, Tuple, Iterator, Any
 
 
 def token_stream(files: List[str]) -> Iterator[Tuple[int, str]]:
-    """Convert list of filenames to a stream of docID-tokens pairs."""
+    """Convert text files to a stream of docID-tokens pairs.
+
+    Args:
+        files: List of filepaths.
+
+    Yields:
+        Pair of docID, token.
+
+    """
     for fileno, filepath in enumerate(files):
         with open(filepath, "r") as f:
             for line in f:
@@ -32,6 +40,16 @@ def spimi_invert(
     Collect terms, docIDs, term-frequencies into a block (dictionary
     of dictionaries) that fits in available memory, write each block's
     dictionary to disk, and start a new dictionary for the next block.
+
+    Args:
+        files: List of filepaths.
+        stemmer: Gensim porter stemmer.
+        blocks_dir: Directory where blocks are saved.
+        memory_available: Available memory in bytes.
+
+    Returns:
+        List of filenames of saved blocks.
+
     """
     memory_used = 0
     outputed_blocks = []
@@ -69,7 +87,16 @@ def spimi_invert(
 def merge_dicts(
     dict1: Dict[int, int], dict2: Dict[int, int]
 ) -> Dict[int, int]:
-    """Merge ans sort two dictionaries."""
+    """Merge ans sort two dictionaries.
+
+    Args:
+        dict1: One dictionary.
+        dict2: Another dictionary.
+
+    Returns:
+        Merged dictionary.
+
+    """
     if dict1 == {}:
         return dict2
     # Merge
@@ -91,6 +118,11 @@ def merge_all_blocks(
     choose minimal term and write merged posting lists corresponding
     to this term to disk. Then read next term only from blocks where
     minimal term was. Repeat until all blocks are emptied.
+
+    Args:
+        outputed_blocks: List of filenames of saved blocks.
+        blocks_dir: Directory where blocks are saved.
+
     """
     files = [shelve.open(blocks_dir + b) for b in outputed_blocks]
     iterators = [iter(sorted(f.keys())) for f in files]
