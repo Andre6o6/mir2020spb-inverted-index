@@ -225,6 +225,7 @@ if __name__ == "__main__":
         for dir in os.listdir(args.root)
         for f in os.listdir(args.root + dir)
     ]
+    docs = sorted(docs)
 
     index = Indexer(docs, args.index, args.root)
     index.query(args.query, args.count)

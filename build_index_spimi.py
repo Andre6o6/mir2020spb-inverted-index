@@ -201,6 +201,11 @@ if __name__ == "__main__":
         for dir in os.listdir(args.root)
         for f in os.listdir(args.root + dir)
     ]
+    docs = sorted(docs)
+    with open("docs_list.txt", "w") as f:   #TODO file name to args
+        for d in docs:
+            f.write(d+'\n')
+    
     files = [args.root + d for d in docs]
     stemmer = PorterStemmer()
     # Generate fitting in memory blocks using SPIMI-Invert
