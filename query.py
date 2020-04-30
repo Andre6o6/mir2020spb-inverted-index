@@ -7,7 +7,9 @@ import shelve
 from gensim.parsing.porter import PorterStemmer
 from math import log2
 from merge_operations import or_postings, and_postings, not_postings
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple
+
+Posting = Tuple[int, float]
 
 
 class Indexer:
@@ -21,11 +23,6 @@ class Indexer:
         index: Index file descriptor.
 
     """
-    root: str
-    docs: List[str]
-    word_count: List[int]
-    stemmer: PorterStemmer
-    index: shelve.DbfilenameShelf
 
     def __init__(
         self, docs: List[str], index_path: str, root: str = "lyrics/"
@@ -51,7 +48,7 @@ class Indexer:
             with open(self.root + doc, "r") as f:
                 self.word_count.append(sum(len(line.split()) for line in f))
 
-    def tfidf(self, posting: Dict[int, int]) -> List[Tuple[int, float]]:
+    def tfidf(self, posting: Dict[int, int]) -> List[Posting]:
         """Calculate tf-idf for documents in posting list.
 
         Args:
@@ -66,7 +63,7 @@ class Indexer:
             for k, v in sorted(posting.items())
         ]
 
-    def query_boolean(self, tokens: List[str]) -> List[Tuple[int, float]]:
+    def query_boolean(self, tokens: List[str]) -> List[Posting]:
         """Recursively parse boolean query in DNF.
 
         Args:
@@ -142,7 +139,7 @@ class Indexer:
                     print("-")
 
     def render(
-        self, tokens: List[str], hits: List[Tuple[int, float]], count: int
+        self, tokens: List[str], hits: List[Posting], count: int
     ) -> None:
         """Print the results of query.
 
@@ -195,7 +192,7 @@ def pretty_doc(filename: str) -> str:
     return "{} - {}".format(band, name)
 
 
-def arg_parse() -> Any:
+def arg_parse() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Querying inverted index")
     parser.add_argument(

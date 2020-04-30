@@ -2,10 +2,12 @@
 """
 from typing import List, Dict, Tuple, Iterator, Any
 
+Posting = Tuple[int, float]
+
 
 def and_postings(
-    posting1: List[Tuple[int, float]], posting2: List[Tuple[int, float]]
-) -> List[Tuple[int, float]]:
+    posting1: List[Posting], posting2: List[Posting]
+) -> List[Posting]:
     """Intersection of posting lists. x AND y.
 
     Args:
@@ -31,8 +33,8 @@ def and_postings(
 
 
 def or_postings(
-    posting1: List[Tuple[int, float]], posting2: List[Tuple[int, float]]
-) -> List[Tuple[int, float]]:
+    posting1: List[Posting], posting2: List[Posting]
+) -> List[Posting]:
     """Union of posting lists. x OR y.
 
     Args:
@@ -63,8 +65,8 @@ def or_postings(
 
 
 def not_postings(
-    posting: List[Tuple[int, float]], max_docId: int
-) -> List[Tuple[int, float]]:
+    posting: List[Posting], max_docId: int
+) -> List[Posting]:
     """Complement of posting list. NOT x.
 
     Args:
@@ -85,8 +87,8 @@ def not_postings(
 
 
 def not_and_postings(
-    not_posting: List[Tuple[int, float]], posting: List[Tuple[int, float]]
-) -> List[Tuple[int, float]]:
+    not_posting: List[Posting], posting: List[Posting]
+) -> List[Posting]:
     """Optimized NOT x AND y.
 
     Args:
@@ -113,10 +115,10 @@ def not_and_postings(
 
 
 def not_or_postings(
-    not_posting: List[Tuple[int, float]],
-    posting: List[Tuple[int, float]],
+    not_posting: List[Posting],
+    posting: List[Posting],
     max_docId: int,
-) -> List[Tuple[int, float]]:
+) -> List[Posting]:
     """Shortcut for NOT x OR y.
 
     Args:

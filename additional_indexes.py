@@ -4,7 +4,7 @@ import argparse
 import shelve
 from collections import defaultdict
 from gensim.parsing.porter import PorterStemmer
-from typing import List, Any
+from typing import List
 
 
 def pretty_doc(filename: str) -> str:
@@ -41,7 +41,7 @@ def build_name_index(
         index.update(index_names)
 
 
-def arg_parse() -> Any:
+def arg_parse() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Additional indexes")
     parser.add_argument(

@@ -5,7 +5,7 @@ import os
 import re
 import requests
 from bs4 import BeautifulSoup
-from typing import List, Tuple, Any
+from typing import List, Tuple
 
 GENIUS_API_TOKEN = os.environ['GENIUS_API_TOKEN']
 
@@ -98,7 +98,7 @@ def scrape_song_lyrics(url: str) -> str:
     return lyrics
 
 
-def arg_parse() -> Any:
+def arg_parse() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="Parser")
     parser.add_argument(
