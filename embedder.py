@@ -8,6 +8,15 @@ import torch
 import transformers as ppb
 from typing import List
 
+def get_text_reduced(filename, maxlen=-1):
+    with open(filename, 'r')as f:
+        lines = [line.rstrip() for line in f]
+        text = ' '.join(x for x in lines if x != "")
+        if maxlen > 0:
+            text = ' '.join(text.split()[:maxlen])
+    return text
+
+
 class Embedder:
     """Class that is used to get dense text embeddings.
 
