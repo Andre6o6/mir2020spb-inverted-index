@@ -7,11 +7,11 @@ from embedder import Embedder, get_text_reduced
 from merge_operations import not_and_postings
 from scipy.spatial.distance import cosine
 
-def query_expand(query: str) -> str, str:
+def query_expand(query: str) -> str:
     m = re.search(r" NOT", query)
     if m:
-        q_pos = q[:m.start()]
-        q_neg = q[m.end():].strip('()')
+        q_pos = query[:m.start()]
+        q_neg = query[m.end():].strip('()')
     else:
         q_pos = query
         q_neg = None
@@ -60,14 +60,14 @@ def arg_parse() -> argparse.Namespace:
     )
     parser.add_argument(
         "--L0",
-        dest="l0_count",
+        dest="l0_size",
         help="How many hits from L0 are reranked with ML",
         default=100,
         type=int,
     )
     parser.add_argument(
         "--L1",
-        dest="l1_count",
+        dest="l1_size",
         help="How many hits to show",
         default=20,
         type=int,
@@ -103,7 +103,10 @@ def main():
     if q_neg:
         for token in q_neg.split():
             term = index.stemmer.stem(token)
-            not_posting = index.tfidf(index.index[term])
+            try:
+                not_posting = index.tfidf(index.index[term])
+            except KeyError:
+                not_posting = []
             hits = not_and_postings(not_posting, hits)
     
     if not hits:
@@ -119,7 +122,7 @@ def main():
     texts = [get_text_reduced(x, maxlen=512) for x in filenames]
     
     #Embed in batches if GPU memory is small
-    if args.batch_size >= args.l0_count:
+    if args.batch_size >= args.l0_size:
         embeddings = embedder.embed(texts)
     else:
         embeddings = batch_embed(embedder, texts, args.batch_size)

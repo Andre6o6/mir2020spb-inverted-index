@@ -10,6 +10,7 @@ from tqdm import trange
 from sklearn.preprocessing import normalize
 
 def calc_embeddings(docs: [str], batch_size: int, root: str) -> np.ndarray:
+    embedder = Embedder()
     all_embeddings = np.zeros((len(docs), 768))
     
     iters = len(docs)//batch_size
@@ -30,7 +31,6 @@ def get_embeddings(docs: [str], args: argparse.Namespace) -> np.ndarray:
         all_embeddings = np.load(args.emb_file)
     except FileNotFoundError:
         print("Embeddings not found. Calculating embeddings...")
-        embedder = Embedder()
         all_embeddings = calc_embeddings(docs, args.batch_size, args.root)
         np.save(args.emb_file, all_embeddings)
     all_embeddings = all_embeddings.astype(np.float32)
@@ -52,7 +52,7 @@ def get_bands(docs: [str]) -> dict:
     return bands
 
 
-def get_band_duplicates(band_name: str, bands: dict) -> dict:
+def get_band_duplicates(duplicates: dict, band_name: str, bands: dict) -> dict:
     #Spellcheck against bands names
     dists = [Levenshtein.distance(band_name.lower(), b.lower()) 
              for b in bands.keys()]
@@ -67,12 +67,11 @@ def get_band_duplicates(band_name: str, bands: dict) -> dict:
     return duplicates_batch
 
 
-def print_duplicates(docs: [str], duplicates: dict)
+def print_duplicates(docs: [str], duplicates: dict):
     for k,v in duplicates.items():
-        if v[0]>k: 
-            print(docs[k])
-            for d in v:
-                print('\t'+ docs[d])
+        print(docs[k])
+        for d in v:
+            print('\t'+ docs[d])
 
 
 def arg_parse() -> argparse.Namespace:
@@ -163,7 +162,7 @@ def main():
     
     try:
         #Load duplicates dict
-        with open(args.duplicate_dict, 'r') as f:
+        with open(args.duplicate_dict, 'rb') as f:
             duplicates = pickle.load(f)
     except FileNotFoundError:
         #Get BERT embeddings for all texts
@@ -185,7 +184,7 @@ def main():
     
     #Write all duplicates into text file
     if args.save:
-        with open(args.out_file, 'r') as f:
+        with open(args.out_file, 'w') as f:
             for k,v in duplicates.items():
                 if v[0]>k: 
                     f.write(docs[k] + '\n')
@@ -195,7 +194,7 @@ def main():
     #Print duplicates in some band's songs
     if args.band_name != "":
         bands = get_bands(docs)
-        d = get_band_duplicates(args.band_name, bands)
+        d = get_band_duplicates(duplicates, args.band_name, bands)
         print_duplicates(docs, d)
 
     #Find duplicates for some song

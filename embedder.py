@@ -5,6 +5,7 @@ to get text embeddings.
 """
 import numpy as np
 import torch
+import logging
 import transformers as ppb
 from typing import List
 
@@ -29,6 +30,8 @@ class Embedder:
 
     def __init__(self):
         """Initialize Embedder by loading models and weights."""
+        logging.getLogger("transformers.tokenization_utils").setLevel(logging.ERROR)
+
         model_class = ppb.DistilBertModel
         tokenizer_class = ppb.DistilBertTokenizer
         pretrained_weights = "distilbert-base-uncased"
