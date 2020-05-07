@@ -15,7 +15,7 @@ from scipy.spatial.distance import cosine
 from typing import List, Tuple
 
 
-def query_expand(query: str) -> Tuple(str, str):
+def query_expand(query: str) -> Tuple[str, str]:
     """Get word tokens for OR part and NOT part.
 
     Args:
