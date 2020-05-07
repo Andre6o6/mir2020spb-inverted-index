@@ -1,3 +1,9 @@
+"""This module implements querying over text embeddings.
+
+The key idea is to use boolean search to get some L0 candidates, then
+find embeddings of top-N of those candidates and rerank them according
+to cosine distance to query embedding.
+"""
 import argparse
 import numpy as np
 import os
@@ -6,9 +12,19 @@ from embedder import Embedder, get_text_reduced
 from merge_operations import not_and_postings
 from query import Indexer
 from scipy.spatial.distance import cosine
+from typing import List, Tuple
 
 
-def query_expand(query: str) -> str:
+def query_expand(query: str) -> Tuple(str, str):
+    """Get word tokens for OR part and NOT part.
+
+    Args:
+        query: Query string.
+
+    Returns:
+        Substrings of tokens that should be in results and that shouldn't.
+
+    """
     m = re.search(r" NOT", query)
     if m:
         q_pos = query[: m.start()]
@@ -20,14 +36,34 @@ def query_expand(query: str) -> str:
 
 
 def query_reduce(query: str) -> str:
+    """Strip query string of all nonword tokens.
+
+    Args:
+        query: Query string.
+
+    Returns:
+        String without nonword tokens.
+
+    """
     query = re.sub(r"NOT", "", query)
     query = re.sub(r"[()]", "", query)
     return query
 
 
 def batch_embed(
-    embedder: Embedder, texts: [str], batch_size: int
+    embedder: Embedder, texts: List[str], batch_size: int
 ) -> np.ndarray:
+    """Get embeddings in batches if GPU memory is not enough.
+
+    Args:
+        embedder: Embedder with DistilBERT model.
+        texts: List of songs' texts.
+        batch_size: Batch size.
+
+    Returns:
+        Numpy array of (N, 768) of texts embeddings.
+
+    """
     embeddings = np.zeros((len(texts), 768))
 
     iters = len(texts) // batch_size
@@ -124,7 +160,6 @@ def main():
     filenames = [os.path.join(args.root, docs[i]) for i in doc_ids]
     texts = [get_text_reduced(x, maxlen=512) for x in filenames]
 
-    # Embed in batches if GPU memory is small
     if args.batch_size >= args.l0_size:
         embeddings = embedder.embed(texts)
     else:

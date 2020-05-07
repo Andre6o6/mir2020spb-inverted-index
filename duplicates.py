@@ -1,3 +1,9 @@
+"""This module implements duplicate search.
+
+The key idea is to get embeddings for all texts in corpus, and then use some
+similarity search to find the closest neighbours for every embedding,
+thresholded with some value.
+"""
 import argparse
 import faiss
 import Levenshtein
@@ -8,9 +14,23 @@ from collections import defaultdict
 from embedder import Embedder, get_text_reduced
 from sklearn.preprocessing import normalize
 from tqdm import trange
+from typing import List, Dict, Tuple
 
 
-def calc_embeddings(docs: [str], batch_size: int, root: str) -> np.ndarray:
+def calc_embeddings(
+    docs: List[str], batch_size: int, root: str
+) -> np.ndarray:
+    """Calculate embeddings (in batches).
+
+    Args:
+        docs: List of documents filenames.
+        batch_size: Batch size.
+        root: Root directory.
+
+    Returns:
+        Numpy array of (N, 768) of texts embeddings.
+
+    """
     embedder = Embedder()
     all_embeddings = np.zeros((len(docs), 768), dtype=np.float32)
 
@@ -27,7 +47,17 @@ def calc_embeddings(docs: [str], batch_size: int, root: str) -> np.ndarray:
     return all_embeddings
 
 
-def get_embeddings(docs: [str], args: argparse.Namespace) -> np.ndarray:
+def get_embeddings(docs: List[str], args: argparse.Namespace) -> np.ndarray:
+    """Load cached (or calculate) embeddings and normalize them.
+
+    Args:
+        docs: List of documents filenames.
+        args: Command-line arguments.
+
+    Returns:
+        Numpy array of (N, 768) of normalized embeddings.
+
+    """
     try:
         all_embeddings = np.load(args.emb_file)
     except FileNotFoundError:
@@ -39,7 +69,16 @@ def get_embeddings(docs: [str], args: argparse.Namespace) -> np.ndarray:
     return all_embeddings
 
 
-def get_bands(docs: [str]) -> dict:
+def get_bands(docs: List[str]) -> Dict[str, Tuple[int, int]]:
+    """Get unique bands and corresponding start docID and end docID.
+
+    Args:
+        docs: List of documents filenames.
+
+    Returns:
+        Dictionary of bands' start and end docIDs.
+
+    """
     bands = {}
     last_band = ""
     for i, d in enumerate(docs):
@@ -53,7 +92,22 @@ def get_bands(docs: [str]) -> dict:
     return bands
 
 
-def get_band_duplicates(duplicates: dict, band_name: str, bands: dict) -> dict:
+def get_band_duplicates(
+    duplicates: Dict[int, List[int]],
+    band_name: str,
+    bands: Dict[str, Tuple[int, int]],
+) -> Dict[int, List[int]]:
+    """Get duplicates of songs of a band.
+
+    Args:
+        duplicates: Dictionary of duplicates.
+        band_name: Name of the band.
+        bands: Dictionary of bands' start and end docIDs.
+
+    Returns:
+        Subdictionary of duplicates of songs of a band.
+
+    """
     # Spellcheck against bands names
     dists = [
         Levenshtein.distance(band_name.lower(), b.lower())
@@ -72,7 +126,14 @@ def get_band_duplicates(duplicates: dict, band_name: str, bands: dict) -> dict:
     return duplicates_batch
 
 
-def print_duplicates(docs: [str], duplicates: dict):
+def print_duplicates(docs: List[str], duplicates: Dict[int, List[int]]):
+    """Print names of songs from dictionary of duplicates.
+
+    Args:
+        docs: List of documents filenames.
+        duplicates: Dictionary of duplicates.
+
+    """
     for k, v in duplicates.items():
         print(docs[k])
         for d in v:
