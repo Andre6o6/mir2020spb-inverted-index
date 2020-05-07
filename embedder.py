@@ -10,7 +10,7 @@ import transformers as ppb
 from typing import List
 
 
-def get_text_reduced(filename: str, maxlen:int = -1) -> str:
+def get_text_reduced(filename: str, maxlen: int = -1) -> str:
     with open(filename, "r") as f:
         lines = [line.rstrip() for line in f]
         text = " ".join(x for x in lines if x != "")

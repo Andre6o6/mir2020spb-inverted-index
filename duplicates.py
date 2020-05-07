@@ -269,11 +269,11 @@ def main():
             # Search file in duplicates dict
             name = os.path.join(*args.find_file.split("/")[-2:])
             idx = docs.index(name)
-            
+
             if not duplicates[idx]:
                 print("No duplicates found")
                 return
-            
+
             for d in duplicates[idx]:
                 print(docs[d])
             print("... are duplicates of ", args.find_file)
