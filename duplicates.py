@@ -1,28 +1,29 @@
 import argparse
+import faiss
+import Levenshtein
 import numpy as np
 import os
 import pickle
 from collections import defaultdict
-import faiss
-import Levenshtein
 from embedder import Embedder, get_text_reduced
-from tqdm import trange
 from sklearn.preprocessing import normalize
+from tqdm import trange
+
 
 def calc_embeddings(docs: [str], batch_size: int, root: str) -> np.ndarray:
     embedder = Embedder()
-    all_embeddings = np.zeros((len(docs), 768))
-    
-    iters = len(docs)//batch_size
-    if len(docs)%batch_size > 0:
+    all_embeddings = np.zeros((len(docs), 768), dtype=np.float32)
+
+    iters = len(docs) // batch_size
+    if len(docs) % batch_size > 0:
         iters += 1
 
     for i in trange(iters):
-        batch = docs[i*batch_size:(i+1)*batch_size]
+        batch = docs[i * batch_size: (i + 1) * batch_size]
         filenames = [os.path.join(root, doc) for doc in batch]
         texts = [get_text_reduced(x, maxlen=512) for x in filenames]
         embeddings = embedder.embed(texts)
-        all_embeddings[i*batch_size:(i+1)*batch_size] = embeddings
+        all_embeddings[i * batch_size: (i + 1) * batch_size] = embeddings
     return all_embeddings
 
 
@@ -38,40 +39,44 @@ def get_embeddings(docs: [str], args: argparse.Namespace) -> np.ndarray:
     return all_embeddings
 
 
-def get_bands(docs: [str]) -> dict:    
+def get_bands(docs: [str]) -> dict:
     bands = {}
     last_band = ""
-    for i,d in enumerate(docs):
-        band = d.split('/')[0]
+    for i, d in enumerate(docs):
+        band = d.split("/")[0]
         if last_band != band:
-            if last_band!="":
+            if last_band != "":
                 start = bands[last_band]
-                bands[last_band] = (start,i)
+                bands[last_band] = (start, i)
             last_band = band
             bands[band] = i
     return bands
 
 
 def get_band_duplicates(duplicates: dict, band_name: str, bands: dict) -> dict:
-    #Spellcheck against bands names
-    dists = [Levenshtein.distance(band_name.lower(), b.lower()) 
-             for b in bands.keys()]
+    # Spellcheck against bands names
+    dists = [
+        Levenshtein.distance(band_name.lower(), b.lower())
+        for b in bands.keys()
+    ]
     idx = np.argmin(dists)
-    if dists[idx] > len(band_name)//2:
+    if dists[idx] > len(band_name) // 2:
         print("Band not found")
         return
     band_name = list(bands.keys())[idx]
-    
-    start,end = bands[band_name]
-    duplicates_batch = {k:v for k,v in duplicates.items() if k>=start and k<end}
+
+    start, end = bands[band_name]
+    duplicates_batch = {
+        k: v for k, v in duplicates.items() if k >= start and k < end
+    }
     return duplicates_batch
 
 
 def print_duplicates(docs: [str], duplicates: dict):
-    for k,v in duplicates.items():
+    for k, v in duplicates.items():
         print(docs[k])
         for d in v:
-            print('\t'+ docs[d])
+            print("\t" + docs[d])
 
 
 def arg_parse() -> argparse.Namespace:
@@ -130,7 +135,7 @@ def arg_parse() -> argparse.Namespace:
         type=str,
     )
     parser.add_argument(
-        "--save", 
+        "--save",
         help="Write all duplicates in text file",
         action="store_true",
     )
@@ -155,62 +160,66 @@ def main():
     args = arg_parse()
     docs = [
         os.path.join(dir, f)
-        for dir in os.listdir(args.root) 
+        for dir in os.listdir(args.root)
         for f in os.listdir(os.path.join(args.root, dir))
     ]
     docs = sorted(docs)
-    
+
     try:
-        #Load duplicates dict
-        with open(args.duplicate_dict, 'rb') as f:
+        # Load duplicates dict
+        with open(args.duplicate_dict, "rb") as f:
             duplicates = pickle.load(f)
     except FileNotFoundError:
-        #Get BERT embeddings for all texts
+        # Get BERT embeddings for all texts
         all_embeddings = get_embeddings(docs, args)
-        #kNN then with faiss
+        # kNN then with faiss
         print("Duplicates dict not found. Calculating duplicates dict...")
         index = faiss.IndexFlatIP(768)
         index.add(all_embeddings)
         D, I = index.search(all_embeddings, args.k)
 
         duplicates = defaultdict(list)
-        for i,row in enumerate(D):
-            for j in range(1,args.k):
+        for i, row in enumerate(D):
+            for j in range(1, args.k):
                 if row[j] > args.threshold:
                     duplicates[i].append(I[i][j])
-                    
-        with open(args.duplicate_dict, 'wb') as f:
-            pickle.dump(duplicates, f)
-    
-    #Write all duplicates into text file
-    if args.save:
-        with open(args.out_file, 'w') as f:
-            for k,v in duplicates.items():
-                if v[0]>k: 
-                    f.write(docs[k] + '\n')
-                    for d in v:
-                        f.write('\t'+ docs[d] + '\n')
 
-    #Print duplicates in some band's songs
+        with open(args.duplicate_dict, "wb") as f:
+            pickle.dump(duplicates, f)
+
+    # Write all duplicates into text file
+    if args.save:
+        with open(args.out_file, "w") as f:
+            for k, v in duplicates.items():
+                if v[0] > k:
+                    f.write(docs[k] + "\n")
+                    for d in v:
+                        f.write("\t" + docs[d] + "\n")
+
+    # Print duplicates in some band's songs
     if args.band_name != "":
         bands = get_bands(docs)
         d = get_band_duplicates(duplicates, args.band_name, bands)
         print_duplicates(docs, d)
 
-    #Find duplicates for some song
+    # Find duplicates for some song
     if args.find_file != "":
         try:
-            #Search file in duplicates dict
-            name = os.path.join(*args.find_file.split('/')[-2:])
+            # Search file in duplicates dict
+            name = os.path.join(*args.find_file.split("/")[-2:])
             idx = docs.index(name)
+            
+            if not duplicates[idx]:
+                print("No duplicates found")
+                return
+            
             for d in duplicates[idx]:
                 print(docs[d])
             print("... are duplicates of ", args.find_file)
         except ValueError:
             print("File is not found in duplicates dict.")
-            #TODO and I'm to lazy to do proper embedding search
-        except KeyError:
-            print("No duplicates found")
+            # TODO and I'm to lazy to do proper embedding search
+
 
 if __name__ == "__main__":
-    main()    
+    main()
