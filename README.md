@@ -30,11 +30,15 @@ python query.py --q 'nothing AND else AND matters'
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1y357xySpDrLapK5orC9Xvkf7B9ZEtsbb)
 
 ## Задание 2. ML поиск
+Можно чекнуть все в Colab-е: 
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19oSIsr1LSqwRGIpIK8UEM0n5XFkSlJ9d?usp=sharing)
+
 Данные:
-* [Корпус](https://drive.google.com/file/d/1n3vnkxYtZKB1VSiLTPeXkh4KRs-LVjbi/view?usp=sharing)
-* [Индекс](https://drive.google.com/file/d/1DZyVhEZHbiUMX7n2u3wMAr80xm6wz8r1/view?usp=sharing)
-* [Предвычисленные эмбеддинги для всех текстов](https://drive.google.com/file/d/1XrA08ia3HNH8NCM7FHaHQf0RM-fWOLSt/view?usp=sharing)
+* [Корпус](https://drive.google.com/file/d/1n3vnkxYtZKB1VSiLTPeXkh4KRs-LVjbi/view?usp=sharing) (необходим)
+* [Индекс](https://drive.google.com/file/d/1DZyVhEZHbiUMX7n2u3wMAr80xm6wz8r1/view?usp=sharing) (необходим)
+* [Предвычисленные эмбеддинги для всех текстов](https://drive.google.com/file/d/1XrA08ia3HNH8NCM7FHaHQf0RM-fWOLSt/view?usp=sharing) (если не хочется тратить время на построение)
 * [Предвычесленный словарь дубликатов](https://drive.google.com/file/d/19pceTLC5gFSsZZ8WFNQ2zWLLZkh9as8B/view?usp=sharing)
+(если не хочется тратить время на построение)
 
 ### ML поиск
 Для поиска запустить скрипт `query_ml.py`. Пример:
