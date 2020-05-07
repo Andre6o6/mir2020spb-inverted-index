@@ -261,7 +261,8 @@ def main():
     if args.band_name != "":
         bands = get_bands(docs)
         d = get_band_duplicates(duplicates, args.band_name, bands)
-        print_duplicates(docs, d)
+        if d:
+            print_duplicates(docs, d)
 
     # Find duplicates for some song
     if args.find_file != "":
