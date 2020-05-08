@@ -136,7 +136,7 @@ def main():
     # L0
     q_pos, q_neg = query_expand(args.query)
     # Get all OR-ed tokens
-    q_pos_expand = re.sub(r" ", " OR ", q_pos)
+    q_pos_expand = re.sub(r" ", " AND ", q_pos)
     hits = index.query_boolean(q_pos_expand.split())
     # Remove all NOT-ed tokens
     if q_neg:

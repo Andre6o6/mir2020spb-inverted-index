@@ -75,5 +75,5 @@ class Embedder:
 
         # Get embedding
         # TODO it's emb. of [CLS] token, try different
-        embedding = last_hidden_states[0][:, 0, :].cpu().numpy()
+        embedding = np.sum(last_hidden_states[0].cpu().numpy(), axis=1)
         return embedding
