@@ -6,7 +6,7 @@ import shelve
 import string
 import sys
 from gensim.parsing.porter import PorterStemmer
-from typing import List, Dict, Tuple, Iterator, Any
+from typing import List, Dict, Tuple, Iterator
 
 
 def token_stream(files: List[str]) -> Iterator[Tuple[int, str]]:
@@ -166,7 +166,7 @@ def merge_all_blocks(
     output.close()
 
 
-def arg_parse() -> Any:
+def arg_parse() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description="inverted index via SPIMI")
     parser.add_argument(
@@ -201,6 +201,11 @@ if __name__ == "__main__":
         for dir in os.listdir(args.root)
         for f in os.listdir(args.root + dir)
     ]
+    docs = sorted(docs)
+    with open("docs_list.txt", "w") as f:   # TODO file name to args
+        for d in docs:
+            f.write(d+'\n')
+
     files = [args.root + d for d in docs]
     stemmer = PorterStemmer()
     # Generate fitting in memory blocks using SPIMI-Invert
